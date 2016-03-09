@@ -13,7 +13,7 @@ using namespace minko;
 using namespace minko::component;
 using namespace minko::math;
 
-const std::string TEXTURE_FILENAME = "model/box.png";
+//const std::string TEXTURE_FILENAME = "model/box.png";
 const std::string EFFECT_FILENAME = "effect/Basic.effect";
 const std::string FBX_MODEL_FILENAME = "model/chair.fbx";
 
@@ -25,12 +25,12 @@ int main(int argc, char *argv[])
     
     // Set options for the default loader (the one use to load our file)
     sceneManager->assets()->loader()->options()
-    ->registerParser<file::PNGParser>("png")
+    //->registerParser<file::PNGParser>("png")
     ->registerParser<file::FBXParser>("fbx");
     
     sceneManager->assets()->loader()
     ->queue(EFFECT_FILENAME)
-    ->queue(TEXTURE_FILENAME)
+    //->queue(TEXTURE_FILENAME)
     ->queue(FBX_MODEL_FILENAME);
     
     auto root = scene::Node::create("root")
