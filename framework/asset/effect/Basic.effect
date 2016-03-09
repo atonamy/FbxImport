@@ -1,0 +1,51 @@
+{
+    "name" : "basic",
+    "uniforms" : {
+        "uFogColor"     : "material[${materialUuid}].fogColor",
+        "uFogBounds"    : "material[${materialUuid}].fogBounds"
+    },
+    "macros" : {
+        "FOG_ENABLED"   : "material[${materialUuid}].fogEnabled",
+        "FOG_LIN"       : "material[${materialUuid}].fogLinear",
+        "FOG_EXP"       : "material[${materialUuid}].fogExponential",
+        "FOG_EXP2"      : "material[${materialUuid}].fogExponential2",
+        "FOG_TECHNIQUE" : { "binding" : "material[${materialUuid}].fogTechnique", "type" : "int" }
+    },
+    "techniques" : [
+        {
+            "name" : "default",
+            "passes" : [
+                {
+                    "name" : "basic-opaque-pass",
+                    "extends" : {
+                        "effect"    : "BaseStreamingTemplate.effect",
+                        "technique" : "base-streaming-technique",
+                        "pass"      : "base-streaming-pass"
+                    },
+                    "vertexShader" : "#pragma include \"Basic.vertex.glsl\"",
+                    "fragmentShader" : "#pragma include \"Basic.fragment.glsl\""
+                }
+            ]
+        },
+        {
+            "name" : "transparent",
+            "states" : {
+                "blendingMode"  : "alpha",
+                "priority"      : "transparent",
+                "zSorted"       : true
+            },
+            "passes" : [
+                {
+                    "name" : "basic-transparent-pass",
+                    "extends" : {
+                        "effect"    : "BaseStreamingTemplate.effect",
+                        "technique" : "base-streaming-technique",
+                        "pass"      : "base-streaming-pass"
+                    },
+                    "vertexShader" : "#pragma include \"Basic.vertex.glsl\"",
+                    "fragmentShader" : "#pragma include \"Basic.fragment.glsl\""
+                }
+            ]
+        }
+    ]
+}
