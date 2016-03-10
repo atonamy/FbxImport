@@ -17,6 +17,8 @@ using namespace minko::math;
 const std::string EFFECT_FILENAME = "effect/Basic.effect";
 const std::string FBX_MODEL_FILENAME = "model/chair.fbx";
 
+typedef std::map<int, float>::iterator it_type;
+
 int main(int argc, char *argv[])
 {
     
@@ -46,6 +48,7 @@ int main(int argc, char *argv[])
     
     // Retrieve our FBX model
     std::shared_ptr<minko::scene::Node> chair = NULL;
+    float currentScale = 0.005f;
    
     auto fileLoaderComplete = sceneManager->assets()->loader()->complete()->connect([&](file::Loader::Ptr loader)
                                                                                     {
@@ -75,50 +78,87 @@ int main(int argc, char *argv[])
                                                                                                                               chair->component<Transform>()->matrix() * math::translate(math::vec3(0, -0.5f, 0))
                                                                                                                               );
 
-                                                                                        chair->component<Transform>()->matrix(chair->component<Transform>()->matrix() * math::scale(math::vec3(0.005f)));
+                                                                                        chair->component<Transform>()->matrix(chair->component<Transform>()->matrix() * math::scale(math::vec3(currentScale)));
                                                                                         // Add the symbol to the scene
                                                                                         root->addChild(chair);
     
                                                                                     });
     
-    float current_x = 0;
-    float current_y = 0;
-    float previous_x = 0;
-    float previous_y = 0;
-    auto touchDown = false;
+   
+
+    
+    std::map<int, float> touchY;
     
     auto enterFrame = canvas->enterFrame()->connect([&](Canvas::Ptr c, float t, float dt)
                                                     {
-                                                        if(chair != NULL && touchDown && (current_y != previous_y || current_x != previous_x)) {
-                                                            chair->component<Transform>()->matrix(
-                                                                                                  chair->component<Transform>()->matrix() * math::rotate((current_x+current_y)/100.f, math::vec3((current_y != previous_y)?1:0, (current_x != previous_x)?1:0, 0))
-                                                                                            );
-                                                            previous_x = current_x;
-                                                            previous_y = current_y;
-                                                        }
+                                                       
 
                                                         sceneManager->nextFrame(t, dt);
                                                     });
     
     
-    auto touchMoveSlot = canvas->touch()->touchMove()->connect([&](input::Touch::Ptr t, int a, float x, float y) {
-        if(touchDown) {
-            current_x = x;
-            current_y = y;
+    auto touchMoveSlot = canvas->touch()->touchMove()->connect([&](input::Touch::Ptr t, int id, float move_x, float move_y) {
+        
+        if(chair != NULL) {
+            
+            if(touchY.size() == 1) {
+                if(move_x != 0)
+                    chair->component<Transform>()->matrix(
+                                                    chair->component<Transform>()->matrix() * math::rotate(move_x/100.f, math::vec3(0, 1, 0))
+                                            );
+        
+                if(move_x != 0)
+                    chair->component<Transform>()->matrix(
+                                                    chair->component<Transform>()->matrix() * math::rotate(move_y/100.f, math::vec3(1, 0, 0))
+                                            );
+            }
+            else if(touchY.size() == 2) {
+                if(move_y != 0) {
+                    
+                    float current_y = 0;
+                    float second_y = 0;
+                    for(it_type iterator = touchY.begin(); iterator != touchY.end(); iterator++) {
+                        if(iterator->first == id)
+                            current_y = iterator->second;
+                        else
+                            second_y = iterator->second;
+                    }
+                    
+                    if((current_y > second_y && move_y > 0) || (current_y < second_y && move_y < 0))
+                        currentScale =  1.025f;
+                    else if((current_y > second_y && move_y < 0) || (current_y < second_y && move_y > 0))
+                        currentScale =  0.975f;
+                    else
+                        currentScale =  1.f;
+                    
+                    chair->component<Transform>()->matrix(
+                                                          chair->component<Transform>()->matrix() * math::scale(math::vec3(currentScale))
+                                                          );
+                    
+                    LOG_INFO("<id-" << id << ">[state Y] current: " << current_y << ", previous:" << second_y);
+                }
+            }
+            
+            
+            
+            
         }
+            
+        LOG_INFO("<id-" << id << ">[move] X: " << move_x << ", Y:" << move_y);
+        LOG_INFO("<id-" << id << ">[scale] value: " << currentScale);
     });
     
-    auto touchDownSlot = canvas->touch()->touchDown()->connect([&](input::Touch::Ptr t, int a, float x, float y)
+    
+    auto touchDownSlot = canvas->touch()->touchDown()->connect([&](input::Touch::Ptr t, int id, float x, float y)
                                                                {
-                                                                   touchDown = true;
+                                                                   touchY[id] = y;
+                                                                   LOG_INFO("<id-" << id << ">[touch down] X: " << x << ", Y: " << y);
                                                                });
     
-    auto touchUpSlot = canvas->touch()->touchUp()->connect([&](input::Touch::Ptr t, int a, float x, float y)
+    auto touchUpSlot = canvas->touch()->touchUp()->connect([&](input::Touch::Ptr t, int id, float x, float y)
                                                            {
-                                                               touchDown = false;
-                                                               current_x = 0;
-                                                               current_y = 0;
-                                                               
+                                                               touchY.erase(id);
+                                                               LOG_INFO("<id-" << id << ">[touch up] X: " << x << ", Y: " << y);
                                                            });
     
     
